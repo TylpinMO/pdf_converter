@@ -39,7 +39,7 @@ async def photos_to_pdf(photo_paths: List[str], output_path: str) -> bool:
                 if img.mode in ('RGBA', 'LA', 'P'):
                     # Создаем белый фон
                     background = Image.new('RGB', img.size, (255, 255, 255))
-                    if img.mode == 'P':
+                    if img.mode in ('P', 'LA'):
                         img = img.convert('RGBA')
                     background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                     img = background

@@ -105,25 +105,14 @@ class Database:
         """Увеличение счетчика операций пользователя"""
         today = date.today()
         async with aiosqlite.connect(self.db_path) as db:
-            # Проверяем, есть ли запись за сегодня
-            async with db.execute(
-                "SELECT operations_count FROM usage_stats WHERE user_id = ? AND date = ?",
+            # Один SQL-запрос исключает гонку двух первых операций за день.
+            await db.execute(
+                """INSERT INTO usage_stats (user_id, date, operations_count)
+                   VALUES (?, ?, 1)
+                   ON CONFLICT(user_id, date) DO UPDATE
+                   SET operations_count = operations_count + 1""",
                 (user_id, today)
-            ) as cursor:
-                row = await cursor.fetchone()
-            
-            if row:
-                # Обновляем счетчик
-                await db.execute(
-                    "UPDATE usage_stats SET operations_count = operations_count + 1 WHERE user_id = ? AND date = ?",
-                    (user_id, today)
-                )
-            else:
-                # Создаем новую запись
-                await db.execute(
-                    "INSERT INTO usage_stats (user_id, date, operations_count) VALUES (?, ?, 1)",
-                    (user_id, today)
-                )
+            )
             
             await db.commit()
             logger.info(f"Счетчик операций для пользователя {user_id} увеличен")

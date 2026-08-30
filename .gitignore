@@ -10,7 +10,8 @@ env/
 ENV/
 
 # Environment variables
-.env
+.env*
+!.env.example
 
 # Database
 *.db
